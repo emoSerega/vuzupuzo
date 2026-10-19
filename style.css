@@ -35,13 +35,13 @@ h2 {
     transform: scale(0.98);
 }
 
-.score-btn {
-    background: #4CAF50;
-    margin-top: 20px;
+.all-btn {
+    background: #2196F3; /* Синий цвет для "Все города" */
 }
 
-.all-btn {
-    background: #2196F3;
+.score-btn {
+    background: #4CAF50; /* Зеленый для баллов */
+    margin-top: 20px;
 }
 
 .input-score {
