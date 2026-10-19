@@ -1,81 +1,88 @@
 let tg = window.Telegram.WebApp;
 tg.expand();
-
 tg.MainButton.textColor = "#FFFFFF";
 tg.MainButton.color = "#2cab37";
 
-// Данные: направление -> список вузов
-const DATA = {
-    "IT и программирование": [
-        { id: "1", name: "МГТУ им. Баумана", city: "Москва" },
-        { id: "2", name: "МФТИ", city: "Москва" },
-        { id: "3", name: "ИТМО", city: "Санкт-Петербург" }
-    ],
-    "Медицина": [
-        { id: "4", name: "Сеченовский", city: "Москва" },
-        { id: "5", name: "Пироговка", city: "Москва" },
-        { id: "6", name: "Павлова", city: "Санкт-Петербург" }
-    ],
-    "Юриспруденция": [
-        { id: "7", name: "МГУ (юрфак)", city: "Москва" },
-        { id: "8", name: "МГЮА им. Кутафина", city: "Москва" },
-        { id: "9", name: "СПбГУ (юрфак)", city: "Санкт-Петербург" }
-    ],
-    "Экономика и финансы": [
-        { id: "10", name: "ВШЭ", city: "Москва" },
-        { id: "11", name: "Финансовый", city: "Москва" },
-        { id: "12", name: "СПбГЭУ", city: "Санкт-Петербург" }
-    ],
-    "Инженерия и техника": [
-        { id: "13", name: "Бауманка", city: "Москва" },
-        { id: "14", name: "МИСиС", city: "Москва" },
-        { id: "15", name: "Политех", city: "Санкт-Петербург" }
-    ],
-    "Гуманитарные науки": [
-        { id: "16", name: "МГУ (истфак)", city: "Москва" },
-        { id: "17", name: "РГГУ", city: "Москва" },
-        { id: "18", name: "СПбГУ (филфак)", city: "Санкт-Петербург" }
-    ]
-};
+// Данные (для красоты, чтобы кнопки не были пустыми до запроса в бота)
+const DIRECTIONS = [
+    "IT и программирование", "Медицина", "Юриспруденция", 
+    "Экономика и финансы", "Инженерия и техника", "Гуманитарные науки"
+];
+const CITIES = ["Москва", "Санкт-Петербург", "Казань", "Новосибирск", "Екатеринбург", "Нижний Новгород", "Томск", "Самара", "Ростов-на-Дону", "Краснодар"];
 
-// Эмодзи для красоты
-const ICONS = {
-    "IT и программирование": "💻",
-    "Медицина": "🩺",
-    "Юриспруденция": "⚖️",
-    "Экономика и финансы": "📊",
-    "Инженерия и техника": "⚙️",
-    "Гуманитарные науки": "📚"
-};
+let selectedData = { direction: "", city: "", action: "" };
 
-let selectedItem = "";
+const container = document.getElementById("content");
+const title = document.getElementById("title");
 
-// Рендерим кнопки направлений
-const container = document.getElementById("directions");
+// --- ЭКРАН 1: НАПРАВЛЕНИЯ ---
+function showDirections() {
+    title.innerText = "🎓 Выберите направление";
+    container.innerHTML = "";
+    tg.MainButton.hide();
 
-Object.keys(DATA).forEach(direction => {
-    const item = document.createElement("div");
-    item.className = "item";
-
-    // Создаем кнопку
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = ICONS[direction] + " " + direction;
-
-    btn.addEventListener("click", function () {
-        // Сбрасываем предыдущий выбор
-        tg.MainButton.hide();
-        selectedItem = direction;
-
-        tg.MainButton.setText("Показать вузы: " + direction);
-        tg.MainButton.show();
+    DIRECTIONS.forEach(dir => {
+        let btn = document.createElement("button");
+        btn.className = "btn";
+        btn.innerText = dir;
+        btn.onclick = () => showCities(dir);
+        container.appendChild(btn);
     });
+}
 
-    item.appendChild(btn);
-    container.appendChild(item);
-});
+// --- ЭКРАН 2: ГОРОДА ---
+function showCities(direction) {
+    title.innerText = "🏙 Выберите город";
+    container.innerHTML = "";
+    tg.MainButton.hide();
+    selectedData.direction = direction;
+    selectedData.action = "show_universities";
 
-// Отправка данных в бота
-Telegram.WebApp.onEvent("mainButtonClicked", function () {
-    tg.sendData(JSON.stringify({ direction: selectedItem }));
-});
+    // Добавляем кнопку "Все города"
+    let allBtn = document.createElement("button");
+    allBtn.className = "btn all-btn";
+    allBtn.innerText = "🌍 Все города";
+    allBtn.onclick = () => sendData({ action: "show_universities", direction: direction, city: "Все" });
+    container.appendChild(allBtn);
+
+    CITIES.forEach(city => {
+        let btn = document.createElement("button");
+        btn.className = "btn";
+        btn.innerText = city;
+        btn.onclick = () => sendData({ action: "show_universities", direction: direction, city: city });
+        container.appendChild(btn);
+    });
+}
+
+// --- КНОПКА ВВОДА БАЛЛОВ ---
+function showScoreInput() {
+    title.innerText = "📊 Подбор по баллам";
+    container.innerHTML = `
+        <input type="number" id="scoreInput" placeholder="Введите баллы (например 240)" class="input-score">
+        <button class="btn" onclick="submitScore()">Найти вузы</button>
+    `;
+    tg.MainButton.hide();
+}
+
+function submitScore() {
+    let score = document.getElementById("scoreInput").value;
+    if (!score) return alert("Введите баллы!");
+    sendData({ action: "search_score", score: score });
+}
+
+// --- ОТПРАВКА ДАННЫХ В БОТА ---
+function sendData(data) {
+    tg.sendData(JSON.stringify(data));
+}
+
+// Инициализация
+window.onload = () => {
+    showDirections();
+    
+    // Добавляем кнопку "Поиск по баллам" на главный экран
+    let scoreBtn = document.createElement("button");
+    scoreBtn.className = "btn score-btn";
+    scoreBtn.innerText = "📊 Подбор по баллам";
+    scoreBtn.onclick = showScoreInput;
+    container.appendChild(scoreBtn);
+};
